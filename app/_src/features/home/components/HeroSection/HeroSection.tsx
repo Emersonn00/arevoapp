@@ -3,8 +3,9 @@ import { Calendar, MapPin, Trophy, Users } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { heroSectionStyles } from './HeroSectionStyle';
+import { assets } from '@/utils/assets';
 
-const heroImage = require('../../../../../assets/images/hero-futevolei.jpg');
+const heroImage = assets.images.heroFutevolei;
 
 export function HeroSection(): JSX.Element {
   const router = useRouter();

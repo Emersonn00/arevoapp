@@ -1,21 +1,21 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 import * as Linking from 'expo-linking';
-import { Session, User } from '@supabase/supabase-js';
+import { AuthError, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
 
 interface AuthContextValue {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (
     email: string,
     password: string,
     nome: string,
     telefone?: string,
     consentData?: Record<string, boolean>,
-  ) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
+  ) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: PropsWithChildren): JSX.Element {
       telefone,
       ...consentData,
     };
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -70,6 +70,26 @@ export function AuthProvider({ children }: PropsWithChildren): JSX.Element {
         data,
       },
     });
+
+    // Se o cadastro foi bem-sucedido e o usuário foi criado, criar o perfil
+    if (!error && signUpData.user) {
+      try {
+        await supabase.from('profiles').insert({
+          user_id: signUpData.user.id,
+          nome: nome,
+          telefone: telefone || null,
+          consents_version: '1.0',
+          privacy_accepted: false,
+          terms_accepted: false,
+          image_consent_accepted: false,
+          plano: 'gratuito',
+        });
+      } catch (profileError) {
+        // Se der erro ao criar perfil, não falha o cadastro
+        console.error('Erro ao criar perfil:', profileError);
+      }
+    }
+
     return { error };
   };
 

@@ -1,16 +1,18 @@
+const path = require('path');
+
 module.exports = function babelConfig(api) {
   api.cache(true);
 
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      'expo-router/babel',
       [
         'module-resolver',
         {
-          extensions: ['.ts', '.tsx', '.js', '.json'],
+          root: ['./'],
+          extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
           alias: {
-            '@': './src',
+            '@': './app/_src',
           },
         },
       ],
