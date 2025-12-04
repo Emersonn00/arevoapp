@@ -32,11 +32,8 @@ function RootLayoutNav() {
     const inTabsGroup = segments[0] === '(tabs)';
 
     if (!user && !inAuthGroup) {
-      // Usuário não logado e não está na área de auth
-      // Redireciona para tabs (que mostrará login na tab de perfil)
-      router.replace('/(tabs)/home');
+      router.replace('/(auth)/login');
     } else if (user && inAuthGroup) {
-      // Usuário logado mas está na área de auth
       router.replace('/(tabs)/home');
     }
   }, [user, loading, segments]);
@@ -55,5 +52,4 @@ function RootLayoutNav() {
     </Stack>
   );
 }
-
 

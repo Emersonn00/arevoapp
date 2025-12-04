@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Globe, Instagram, MapPin, Phone } from 'lucide-react-native';
 import { supabase } from '@/services/supabase/client';
@@ -31,7 +31,7 @@ interface ArenaClass {
   max_alunos: number | null;
 }
 
-export default function ArenaDetailsScreen(): JSX.Element {
+export default function ArenaDetailsScreen() {
   const router = useRouter();
   const { arenaId } = useLocalSearchParams<{ arenaId: string }>();
 
@@ -158,6 +158,9 @@ export default function ArenaDetailsScreen(): JSX.Element {
               <Text style={styles.classMeta}>
                 {aula.nivel ?? 'Nível livre'} • Máx. {aula.max_alunos ?? '—'} alunos
               </Text>
+              <TouchableOpacity style={styles.primaryButton} onPress={() => router.push(`/(protected)/aulas/agendar?arenaId=${arena.id}`)}>
+                <Text style={styles.primaryButtonText}>Agendar aula</Text>
+              </TouchableOpacity>
             </View>
           ))
         )}
@@ -245,6 +248,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     gap: 4,
+  },
+  primaryButton: {
+    marginTop: 12,
+    backgroundColor: '#1E3A8A',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   classTitle: {
     fontSize: 16,

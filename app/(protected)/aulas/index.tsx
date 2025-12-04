@@ -9,59 +9,58 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, Calendar, Clock, Users, MapPin } from 'lucide-react-native';
+import { Calendar, Clock, Users, MapPin } from 'lucide-react-native';
 import { supabase } from '@/services/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale/pt-BR';
 
-interface Aula {
+interface InscricaoAulaItem {
   id: string;
-  titulo: string;
-  data: string;
-  horario: string;
-  duracao: number;
-  nivel: string | null;
-  max_alunos: number | null;
-  arena_id: string;
-  arenas: {
-    nome: string;
-    endereco_cidade: string | null;
+  data_aula: string;
+  aulas: {
+    id: string;
+    titulo: string;
+    horario: string;
+    duracao: number;
+    nivel: string | null;
+    max_alunos: number | null;
+    arenas: {
+      nome: string;
+      endereco_cidade: string | null;
+    } | null;
   } | null;
 }
 
 export default function MyClassesScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const [aulas, setAulas] = useState<Aula[]>([]);
+  const [inscricoes, setInscricoes] = useState<InscricaoAulaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (user) {
-      loadAulas();
+      loadInscricoes();
     }
   }, [user]);
 
-  const loadAulas = async () => {
+  const loadInscricoes = async () => {
     if (!user) return;
 
     try {
       const today = new Date().toISOString().split('T')[0];
-
       const { data, error } = await supabase
-        .from('aulas')
+        .from('inscricoes_aulas')
         .select(
-          'id, titulo, data, horario, duracao, nivel, max_alunos, arena_id, arenas (nome, endereco_cidade)'
+          'id, data_aula, aulas ( id, titulo, horario, duracao, nivel, max_alunos, arenas (nome, endereco_cidade) )'
         )
-        .eq('professor_id', user.id)
-        .eq('ativo', true)
-        .gte('data', today)
-        .order('data', { ascending: true })
-        .order('horario', { ascending: true });
+        .eq('user_id', user.id)
+        .gte('data_aula', today)
+        .order('data_aula', { ascending: true });
 
       if (error) throw error;
-      setAulas(data || []);
+      setInscricoes(data || []);
     } catch (error) {
       console.error('Erro ao carregar aulas:', error);
     } finally {
@@ -72,7 +71,7 @@ export default function MyClassesScreen() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadAulas();
+    loadInscricoes();
   };
 
   const formatDate = (dateString: string) => {
@@ -85,34 +84,34 @@ export default function MyClassesScreen() {
     }
   };
 
-  const renderAula = ({ item }: { item: Aula }) => (
+  const renderInscricao = ({ item }: { item: InscricaoAulaItem }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => router.push(`/(protected)/aulas/${item.id}`)}
+      onPress={() => item.aulas?.id && router.push(`/(protected)/aulas/${item.aulas.id}`)}
     >
-      <Text style={styles.cardTitle}>{item.titulo}</Text>
+      <Text style={styles.cardTitle}>{item.aulas?.titulo}</Text>
       <View style={styles.cardInfo}>
         <View style={styles.infoRow}>
           <Calendar color="#6B7280" size={16} />
-          <Text style={styles.infoText}>{formatDate(item.data)}</Text>
+          <Text style={styles.infoText}>{formatDate(item.data_aula)}</Text>
         </View>
         <View style={styles.infoRow}>
           <Clock color="#6B7280" size={16} />
-          <Text style={styles.infoText}>{item.horario}</Text>
+          <Text style={styles.infoText}>{item.aulas?.horario}</Text>
         </View>
-        {item.arenas && (
+        {item.aulas?.arenas && (
           <View style={styles.infoRow}>
             <MapPin color="#6B7280" size={16} />
             <Text style={styles.infoText}>
-              {item.arenas.nome}
-              {item.arenas.endereco_cidade && ` - ${item.arenas.endereco_cidade}`}
+              {item.aulas.arenas.nome}
+              {item.aulas.arenas.endereco_cidade && ` - ${item.aulas.arenas.endereco_cidade}`}
             </Text>
           </View>
         )}
-        {item.max_alunos && (
+        {item.aulas?.max_alunos && (
           <View style={styles.infoRow}>
             <Users color="#6B7280" size={16} />
-            <Text style={styles.infoText}>Máx. {item.max_alunos} alunos</Text>
+            <Text style={styles.infoText}>Máx. {item.aulas.max_alunos} alunos</Text>
           </View>
         )}
       </View>
@@ -131,28 +130,22 @@ export default function MyClassesScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Minhas Aulas</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => router.push('/(protected)/aulas/criar')}
-        >
-          <Plus color="#FFFFFF" size={20} />
-        </TouchableOpacity>
       </View>
 
-      {aulas.length === 0 ? (
+      {inscricoes.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Nenhuma aula criada ainda</Text>
+          <Text style={styles.emptyText}>Você ainda não tem aulas agendadas</Text>
           <TouchableOpacity
             style={styles.emptyButton}
-            onPress={() => router.push('/(protected)/aulas/criar')}
+            onPress={() => router.push('/(protected)/aulas/agendar')}
           >
-            <Text style={styles.emptyButtonText}>Criar Primeira Aula</Text>
+            <Text style={styles.emptyButtonText}>Agendar Aula</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <FlatList
-          data={aulas}
-          renderItem={renderAula}
+          data={inscricoes}
+          renderItem={renderInscricao}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           refreshControl={
@@ -160,14 +153,6 @@ export default function MyClassesScreen() {
           }
         />
       )}
-      
-      <TouchableOpacity
-        style={styles.alunosButton}
-        onPress={() => router.push('/(protected)/aulas/alunos')}
-      >
-        <Users color="#1E3A8A" size={20} />
-        <Text style={styles.alunosButtonText}>Ver Meus Alunos</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -185,7 +170,6 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
@@ -195,14 +179,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#111827',
-  },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1E3A8A',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   list: {
     padding: 20,
@@ -279,4 +255,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-

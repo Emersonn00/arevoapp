@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
-  FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -17,9 +16,6 @@ import {
   MapPin,
   Users,
   DollarSign,
-  Edit,
-  User,
-  Phone,
 } from 'lucide-react-native';
 import { supabase } from '@/services/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -58,24 +54,22 @@ interface Inscricao {
   data_inscricao: string;
 }
 
-export default function ClassDetailsScreen() {
+export default function ClassDetailsScreen(): JSX.Element {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { aulaId } = useLocalSearchParams<{ aulaId: string }>();
   const { user } = useAuth();
   const [aula, setAula] = useState<Aula | null>(null);
   const [inscricoes, setInscricoes] = useState<Inscricao[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      loadAula();
-      loadInscricoes();
+    if (aulaId) {
+      loadAula(aulaId as string);
+      loadInscricoes(aulaId as string);
     }
-  }, [id]);
+  }, [aulaId]);
 
-  const loadAula = async () => {
-    if (!id) return;
-
+  const loadAula = async (id: string) => {
     try {
       const { data, error } = await supabase
         .from('aulas')
@@ -87,9 +81,10 @@ export default function ClassDetailsScreen() {
         .single();
 
       if (error) throw error;
-      setAula(data);
+      if (data) {
+        setAula({ ...(data as any), is_recorrente: !!(data as any)?.is_recorrente });
+      }
     } catch (error: any) {
-      console.error('Erro ao carregar aula:', error);
       Alert.alert('Erro', 'Aula não encontrada', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -98,9 +93,7 @@ export default function ClassDetailsScreen() {
     }
   };
 
-  const loadInscricoes = async () => {
-    if (!id) return;
-
+  const loadInscricoes = async (id: string) => {
     try {
       const { data, error } = await supabase
         .from('inscricoes_aulas')
@@ -110,9 +103,7 @@ export default function ClassDetailsScreen() {
 
       if (error) throw error;
       setInscricoes(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar inscrições:', error);
-    }
+    } catch (error) {}
   };
 
   const formatDate = (dateString: string) => {
@@ -164,7 +155,7 @@ export default function ClassDetailsScreen() {
       .substring(0, 2);
   };
 
-  const isOwner = user?.id === aula?.professor_id;
+  const isOwner = false;
 
   if (loading) {
     return (
@@ -177,7 +168,7 @@ export default function ClassDetailsScreen() {
   if (!aula) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Aula não encontrada</Text>
+        <Text style={styles.errorText}>Aula não encontrado</Text>
       </View>
     );
   }
@@ -192,15 +183,7 @@ export default function ClassDetailsScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>{aula.titulo}</Text>
-          {isOwner && (
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => router.push(`/(protected)/aulas/${id}/editar`)}
-            >
-              <Edit color="#1E3A8A" size={20} />
-              <Text style={styles.editButtonText}>Editar</Text>
-            </TouchableOpacity>
-          )}
+          
         </View>
 
         <View style={styles.section}>
@@ -258,92 +241,9 @@ export default function ClassDetailsScreen() {
               </View>
             </View>
           )}
-
-          {aula.nivel && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>Nível: {aula.nivel}</Text>
-            </View>
-          )}
-
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Tipo: {aula.tipo}</Text>
-          </View>
-
-          {(aula.aceita_totalpass || aula.aceita_wellhub) && (
-            <View style={styles.paymentMethods}>
-              <Text style={styles.paymentLabel}>Aceita:</Text>
-              {aula.aceita_totalpass && (
-                <View style={styles.paymentBadge}>
-                  <Text style={styles.paymentBadgeText}>TotalPass</Text>
-                </View>
-              )}
-              {aula.aceita_wellhub && (
-                <View style={styles.paymentBadge}>
-                  <Text style={styles.paymentBadgeText}>Wellhub</Text>
-                </View>
-              )}
-            </View>
-          )}
         </View>
 
-        {aula.descricao && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Descrição</Text>
-            <Text style={styles.descriptionText}>{aula.descricao}</Text>
-          </View>
-        )}
-
-        {isOwner && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Users color="#1E3A8A" size={20} />
-              <Text style={styles.sectionTitle}>
-                Alunos Inscritos ({inscricoes.length})
-              </Text>
-            </View>
-            {inscricoes.length === 0 ? (
-              <Text style={styles.emptyText}>Nenhum aluno inscrito ainda</Text>
-            ) : (
-              <FlatList
-                data={inscricoes}
-                keyExtractor={(item) => item.id}
-                scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <View style={styles.studentCard}>
-                    <View style={styles.studentHeader}>
-                      <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{getInitials(item.nome_aluno)}</Text>
-                      </View>
-                      <View style={styles.studentInfo}>
-                        <Text style={styles.studentName}>{item.nome_aluno}</Text>
-                        <Text style={styles.studentDate}>
-                          Inscrito em {formatDate(item.data_inscricao)}
-                        </Text>
-                      </View>
-                    </View>
-                    {item.telefone_aluno && (
-                      <View style={styles.studentActions}>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() => handleCall(item.telefone_aluno)}
-                        >
-                          <Phone color="#1E3A8A" size={16} />
-                          <Text style={styles.actionButtonText}>Ligar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.actionButton}
-                          onPress={() => handleWhatsApp(item.telefone_aluno)}
-                        >
-                          <Text style={styles.actionButtonText}>WhatsApp</Text>
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                )}
-              />
-            )}
-          </View>
-        )}
+        
       </View>
     </ScrollView>
   );
@@ -437,45 +337,11 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 2,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  badgeText: {
-    color: '#1E3A8A',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  paymentMethods: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-  paymentLabel: {
+  emptyText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  paymentBadge: {
-    backgroundColor: '#D1FAE5',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  paymentBadgeText: {
-    color: '#065F46',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  descriptionText: {
-    fontSize: 15,
-    color: '#4B5563',
-    lineHeight: 22,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 8,
   },
   studentCard: {
     backgroundColor: '#F9FAFB',
@@ -537,12 +403,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  emptyText: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginTop: 8,
-  },
   errorText: {
     fontSize: 16,
     color: '#6B7280',
@@ -550,6 +410,3 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
 });
-
-
-

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { Home, Trophy, PlusCircle, User, LogIn, MapPin } from 'lucide-react-native';
+import { Home, User, LogIn, MapPin, CalendarDays, Trophy } from 'lucide-react-native';
 
 export default function TabLayout(): JSX.Element {
   const { user } = useAuth();
@@ -28,15 +28,6 @@ export default function TabLayout(): JSX.Element {
         }}
       />
       <Tabs.Screen
-        name="campeonatos"
-        options={{
-          title: 'Campeonatos',
-          tabBarIcon: ({ color, size }) => (
-            <Trophy size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="arenas"
         options={{
           title: 'Arenas',
@@ -46,13 +37,21 @@ export default function TabLayout(): JSX.Element {
         }}
       />
       <Tabs.Screen
-        name="criar-campeonato"
+        name="aulas"
         options={{
-          title: 'Criar',
+          title: 'Aulas',
           tabBarIcon: ({ color, size }) => (
-            <PlusCircle size={size} color={color} />
+            <CalendarDays size={size} color={color} />
           ),
-          href: user ? undefined : null,
+        }}
+      />
+      <Tabs.Screen
+        name="campeonatos"
+        options={{
+          title: 'Campeonatos',
+          tabBarIcon: ({ color, size }) => (
+            <Trophy size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -70,5 +69,3 @@ export default function TabLayout(): JSX.Element {
     </Tabs>
   );
 }
-
-

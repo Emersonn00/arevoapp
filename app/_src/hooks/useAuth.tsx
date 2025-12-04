@@ -1,5 +1,6 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from 'react';
 import * as Linking from 'expo-linking';
+import { makeRedirectUri, AuthRequest } from 'expo-auth-session';
 import { AuthError, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
 
@@ -94,14 +95,32 @@ export function AuthProvider({ children }: PropsWithChildren): JSX.Element {
   };
 
   const signInWithGoogle = async () => {
-    const redirectTo = Linking.createURL('/(protected)/feed');
-    const { error } = await supabase.auth.signInWithOAuth({
+    const redirectTo = makeRedirectUri({ scheme: 'arevo' });
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
       },
     });
-    return { error };
+    if (error) {
+      return { error };
+    }
+    if (data?.url) {
+      const request = new AuthRequest({
+        clientId: 'google',
+        redirectUri: redirectTo,
+        usePKCE: false,
+        scopes: [],
+      });
+      const result = await request.promptAsync(undefined as any, { url: data.url });
+      if (result.type !== 'success') {
+        return { error: new Error('OAuth flow not completed') as AuthError };
+      }
+      const { data: sessionData } = await supabase.auth.getSession();
+      setSession(sessionData.session);
+      setUser(sessionData.session?.user ?? null);
+    }
+    return { error: null };
   };
 
   const signOut = async () => {
@@ -132,5 +151,3 @@ export function useAuth(): AuthContextValue {
   }
   return context;
 }
-
-

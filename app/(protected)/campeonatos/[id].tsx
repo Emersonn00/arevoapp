@@ -125,9 +125,7 @@ export default function TournamentDetailsScreen() {
     });
   };
 
-  const handleViewBracket = () => {
-    router.push(`/(protected)/campeonatos/${id}/chaveamento`);
-  };
+  
 
   if (loading) {
     return (
@@ -339,30 +337,7 @@ export default function TournamentDetailsScreen() {
             <Text style={styles.secondaryButtonText}>Entrar em Contato</Text>
           </TouchableOpacity>
 
-          {isOwner && (
-            <>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={handleViewBracket}
-              >
-                <Trophy color="#1E3A8A" size={20} />
-                <Text style={styles.secondaryButtonText}>Ver Chaveamento</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => router.push(`/(protected)/campeonatos/${id}/inscritos`)}
-              >
-                <Users color="#1E3A8A" size={20} />
-                <Text style={styles.secondaryButtonText}>Gerenciar Inscritos</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={() => router.push(`/(protected)/campeonatos/${id}/editar`)}
-              >
-                <Text style={styles.secondaryButtonText}>Editar Campeonato</Text>
-              </TouchableOpacity>
-            </>
-          )}
+          
         </View>
       </View>
 
@@ -620,4 +595,3 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
 });
-

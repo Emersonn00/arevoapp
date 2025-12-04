@@ -13,7 +13,7 @@ export function HeroSection(): JSX.Element {
   const styles = heroSectionStyles
 
   const handleNavigate = () => {
-    router.push('/(auth)/login');
+    router.push('/(tabs)/campeonatos');
   };
 
   return (
@@ -26,7 +26,7 @@ export function HeroSection(): JSX.Element {
         <View style={styles.actions}>
           <Pressable style={[styles.actionButton, styles.primaryButton]} onPress={handleNavigate}>
             <Trophy color="#1D4ED8" size={18} />
-            <Text style={[styles.actionText, styles.primaryText]}>Criar Campeonato</Text>
+            <Text style={[styles.actionText, styles.primaryText]}>Ver Campeonatos</Text>
           </Pressable>
           <Pressable style={[styles.actionButton, styles.outlineButton]} onPress={handleNavigate}>
             <Users color="#FFFFFF" size={18} />

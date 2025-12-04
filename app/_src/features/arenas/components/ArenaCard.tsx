@@ -1,3 +1,4 @@
+import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MapPin } from 'lucide-react-native';
 import { Json } from '@/services/supabase/types';
@@ -10,6 +11,8 @@ export interface ArenaCardProps {
   descricao: string | null;
   fotos: Json | null;
   onPress?: (id: string) => void;
+  hasAvailability?: boolean;
+  availabilityCount?: number;
 }
 
 export function ArenaCard({
@@ -20,12 +23,19 @@ export function ArenaCard({
   descricao,
   fotos,
   onPress,
-}: ArenaCardProps): JSX.Element {
+  hasAvailability,
+  availabilityCount,
+}: ArenaCardProps) {
   const imageSource = extractPrimaryPhoto(fotos);
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(id)}>
       {imageSource ? (
-        <Image source={{ uri: imageSource }} style={styles.image} />
+        <View>
+          <Image source={{ uri: imageSource }} style={styles.image} />
+          {hasAvailability && (
+            <View style={styles.availabilityDot} />
+          )}
+        </View>
       ) : (
         <View style={[styles.image, styles.placeholder]}>
           <Text style={styles.placeholderText}>Sem fotos</Text>
@@ -40,6 +50,9 @@ export function ArenaCard({
             {[endereco_bairro, endereco_cidade].filter(Boolean).join(', ')}
           </Text>
         </View>
+        {availabilityCount ? (
+          <Text style={styles.availabilityText}>{availabilityCount} aulas futuras</Text>
+        ) : null}
         {descricao ? <Text style={styles.description}>{truncate(descricao, 120)}</Text> : null}
       </View>
     </Pressable>
@@ -75,6 +88,17 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 180,
   },
+  availabilityDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#10B981',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+  },
   placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -101,6 +125,11 @@ const styles = StyleSheet.create({
   location: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  availabilityText: {
+    fontSize: 13,
+    color: '#059669',
+    fontWeight: '600',
   },
   description: {
     fontSize: 14,
